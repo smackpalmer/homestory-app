@@ -324,7 +324,7 @@ function ParcelMap({properties,onSelect,regridToken}) {
             </div>
           ))}
         </div>
-        {!regridToken&&<div style={{position:"absolute",top:8,right:8,background:"#000c",borderRadius:8,padding:"4px 10px",zIndex:1000}}><span style={{color:C.yellow,fontSize:10,fontWeight:600}}>📍 Add Regrid token for parcel lines</span></div>}
+
       </div>
       {loadingParcel&&<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginTop:8,display:"flex",alignItems:"center",gap:10}}><Spinner size={14}/><span style={{color:C.muted,fontSize:13}}>Looking up parcel — {parcelFor}...</span></div>}
       {parcelInfo&&!loadingParcel&&(
@@ -982,15 +982,7 @@ function HomeReportTab({property,notes,setNotes,saved,setSaved}) {
   const scoreIcon=property.roofStatus==="good"?"✓":property.roofStatus==="aging"?"⚠":"!";
 
   const download = async () => {
-    // Load jsPDF if not already loaded
-    if (!window.jspdf) {
-      await new Promise(resolve => {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-        s.onload = resolve; document.head.appendChild(s);
-      });
-    }
-    const { jsPDF } = window.jspdf;
+    const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ unit:"pt", format:"letter" });
     const W = 612, M = 48, RW = W - M * 2;
     let y = 0;
@@ -2414,14 +2406,7 @@ function SearchScreen({properties,onSelect,regridToken,setRegridToken}) {
       {/* Map */}
       <ParcelMap properties={properties} onSelect={onSelect} regridToken={regridToken}/>
 
-      {/* Regrid token */}
-      <div style={{marginBottom:14}}>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <input value={regridToken} onChange={e=>setRegridToken(e.target.value)} placeholder="Paste Regrid token for parcel boundaries (free at regrid.com)..."
-            style={{flex:1,background:C.card,border:`1px solid ${regridToken?C.green+"44":C.border}`,borderRadius:10,padding:"9px 12px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
-          {regridToken&&<span style={{color:C.green,fontSize:12,fontWeight:700,flexShrink:0}}>📍 ON</span>}
-        </div>
-      </div>
+
 
       {/* Stats */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
@@ -3970,7 +3955,7 @@ export default function HomeStory() {
   const [screen,setScreen]=useState("role_select"); // role_select | landing | search | property | log | pricing | standards | landlord | listing
   const [selected,setSelected]=useState(null);
   const [properties,setProperties]=useState(DEMO_PROPERTIES);
-  const [userTier,setUserTier]=useState("free"); // free | contractor | adjuster | landlord
+  const [userTier,setUserTier]=useState("contractor"); // free | contractor | adjuster | landlord
   const [userRole,setUserRole]=useState(null); // null | contractor | landlord | adjuster | homeowner
   const [showPaywall,setShowPaywall]=useState(null); // null or feature name
   const [listingProperty,setListingProperty]=useState(null);
@@ -4048,7 +4033,7 @@ export default function HomeStory() {
             {screen!=="landing"&&<div onClick={()=>setScreen("pricing")} style={{background:userTier==="contractor"?C.accent+"22":C.surface,border:`1px solid ${userTier==="contractor"?C.accent+"44":C.border}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
               <span style={{color:userTier==="contractor"?C.accent:C.dim,fontSize:10,fontWeight:700}}>{userTier==="contractor"?"⚡ Pro":"Free"}</span>
             </div>}
-            {screen==="search"&&<button onClick={()=>setMenuOpen(!menuOpen)} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit"}}>⚙️</button>}
+
             <button onClick={()=>setNavOpen(!navOpen)} style={{background:navOpen?C.accent+"22":"none",border:`1px solid ${navOpen?C.accent+"44":C.border}`,borderRadius:8,width:36,height:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5,cursor:"pointer",WebkitTapHighlightColor:"transparent",flexShrink:0}}>
               <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s"}}/>
               <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s",opacity:navOpen?0:1}}/>
@@ -4056,17 +4041,7 @@ export default function HomeStory() {
             </button>
           </div>
         </div>
-        {menuOpen&&screen==="search"&&(
-          <div style={{padding:"10px 16px 14px",borderTop:`1px solid ${C.border}`}}>
-            <div style={{color:C.muted,fontSize:11,marginBottom:6}}>Paste Regrid token for live parcel boundaries:</div>
-            <div style={{display:"flex",gap:8}}>
-              <input value={regridToken} onChange={e=>setRegridToken(e.target.value)} placeholder="Regrid API token..."
-                style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
-              <button onClick={()=>setMenuOpen(false)} style={{background:regridToken?C.green:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit"}}>{regridToken?"✓ Done":"Skip"}</button>
-            </div>
-            <div style={{color:C.dim,fontSize:10,marginTop:5}}>Free at regrid.com — 25 lookups/day</div>
-          </div>
-        )}
+
         {/* Nav tabs for search/contractor */}
         {(screen==="search"||screen==="log"||screen==="contractor"||screen==="pricing"||screen==="standards"||screen==="landlord"||screen==="cloud"||screen==="sale_inspection")&&(
           <div style={{display:"flex",borderTop:`1px solid ${C.border}`}}>
