@@ -4249,6 +4249,156 @@ function DocumentsFolder({property}) {
 
 
 
+
+// ── CSV Import Screen ─────────────────────────────────────────────────────────
+function CSVImportScreen({onComplete}) {
+  const [status, setStatus] = useState("idle"); // idle | parsing | uploading | done | error
+  const [result, setResult] = useState(null);
+  const [preview, setPreview] = useState([]);
+  const fileRef = useRef();
+
+  const parseCSV = (text) => {
+    const lines = text.split("\n").filter(l=>l.trim());
+    const headers = lines[0].split(",").map(h=>h.replace(/"/g,"").trim());
+    const rows = [];
+    for(let i=1;i<lines.length;i++) {
+      const vals = [];
+      let cur = "", inQ = false;
+      for(const ch of lines[i]) {
+        if(ch==='"') inQ=!inQ;
+        else if(ch===","&&!inQ) { vals.push(cur.trim()); cur=""; }
+        else cur+=ch;
+      }
+      vals.push(cur.trim());
+      const row = {};
+      headers.forEach((h,j)=>{ row[h]=vals[j]||""; });
+      rows.push(row);
+    }
+    return rows;
+  };
+
+  const handleFile = async (file) => {
+    if(!file) return;
+    setStatus("parsing");
+    const text = await file.text();
+    const rows = parseCSV(text);
+    setPreview(rows.slice(0,5));
+    setStatus("ready");
+    window._csvRows = rows;
+  };
+
+  const handleImport = async () => {
+    const rows = window._csvRows;
+    if(!rows||!rows.length) return;
+    setStatus("uploading");
+    try {
+      const res = await fetch("https://homestory-server-production.up.railway.app/api/import-csv", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({rows}),
+      });
+      const data = await res.json();
+      setResult(data);
+      setStatus("done");
+    } catch(err) {
+      setStatus("error");
+      setResult({error: err.message});
+    }
+  };
+
+  return (
+    <div style={{paddingBottom:40}}>
+      <div style={{marginBottom:20}}>
+        <div style={{color:C.accent,fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>Historical Import</div>
+        <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:24,letterSpacing:-0.5,marginBottom:8}}>Import from Roofr CSV</h2>
+        <p style={{color:C.muted,fontSize:13,lineHeight:1.7}}>Upload your Roofr job export to bring your full job history into HomeStory. Every address becomes a permanent property record.</p>
+      </div>
+
+      {status==="idle"&&(
+        <div>
+          <div onClick={()=>fileRef.current.click()} style={{border:`2px dashed ${C.border}`,borderRadius:14,padding:"48px 20px",textAlign:"center",cursor:"pointer",marginBottom:16,background:C.card}}>
+            <div style={{fontSize:40,marginBottom:10}}>📂</div>
+            <div style={{color:C.text,fontSize:15,fontWeight:700,marginBottom:6}}>Upload Roofr CSV Export</div>
+            <div style={{color:C.muted,fontSize:13}}>job-report-export-*.csv</div>
+          </div>
+          <input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16}}>
+            <div style={{color:C.muted,fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>How to export from Roofr</div>
+            {["1. Go to Jobs in Roofr","2. Click Export or Download","3. Select All Jobs / CSV format","4. Upload that file here"].map((s,i)=>(
+              <div key={i} style={{color:C.muted,fontSize:13,padding:"4px 0"}}>{s}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {status==="parsing"&&(
+        <div style={{textAlign:"center",padding:"48px 0"}}>
+          <Spinner size={40}/>
+          <div style={{color:C.muted,fontSize:14,marginTop:16}}>Reading CSV file...</div>
+        </div>
+      )}
+
+      {status==="ready"&&(
+        <div>
+          <div style={{background:C.green+"0a",border:`1px solid ${C.green}33`,borderRadius:12,padding:16,marginBottom:16}}>
+            <div style={{color:C.green,fontSize:14,fontWeight:700,marginBottom:4}}>✓ {window._csvRows?.length} jobs ready to import</div>
+            <div style={{color:C.muted,fontSize:12}}>Preview of first 5 rows:</div>
+          </div>
+          {preview.map((row,i)=>(
+            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 14px",marginBottom:8}}>
+              <div style={{color:C.text,fontSize:13,fontWeight:600,marginBottom:2}}>{row["Job address"]}</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <Pill color={row["Stage category"]==="Completed"?C.green:row["Stage category"]==="Won"?C.blue:C.muted}>{row["Stage category"]}</Pill>
+                {row["Customer name"]&&<Pill color={C.dim}>{row["Customer name"]}</Pill>}
+                {parseFloat(row["Job value"])>0&&<Pill color={C.accent}>${parseFloat(row["Job value"]).toLocaleString()}</Pill>}
+              </div>
+            </div>
+          ))}
+          <div style={{marginTop:16,display:"flex",gap:10}}>
+            <Btn variant="ghost" onClick={()=>{setStatus("idle");setPreview([]);}}>Cancel</Btn>
+            <Btn full color={C.accent} onClick={handleImport}>Import All {window._csvRows?.length} Jobs →</Btn>
+          </div>
+        </div>
+      )}
+
+      {status==="uploading"&&(
+        <div style={{textAlign:"center",padding:"48px 0"}}>
+          <Spinner size={40}/>
+          <div style={{color:C.text,fontSize:16,fontWeight:700,marginTop:16,marginBottom:8}}>Importing jobs...</div>
+          <div style={{color:C.muted,fontSize:13}}>Building your Southern Illinois property database</div>
+        </div>
+      )}
+
+      {status==="done"&&result&&(
+        <div style={{textAlign:"center",padding:"32px 0"}}>
+          <div style={{fontSize:52,marginBottom:16}}>✅</div>
+          <div style={{color:C.green,fontSize:20,fontWeight:800,marginBottom:8}}>Import Complete</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24}}>
+            {[["Imported",result.imported,C.green],["Skipped",result.skipped,C.yellow],["Errors",result.errors,C.red]].map(([l,v,c])=>(
+              <div key={l} style={{background:C.card,border:`1px solid ${c}33`,borderRadius:12,padding:"16px 10px",textAlign:"center"}}>
+                <div style={{color:c,fontSize:24,fontWeight:800}}>{v}</div>
+                <div style={{color:C.muted,fontSize:11,fontWeight:700,textTransform:"uppercase",marginTop:3}}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{color:C.muted,fontSize:13,marginBottom:24}}>Your property database now includes your full Roofr job history.</div>
+          <Btn full color={C.accent} onClick={()=>{setStatus("idle");onComplete&&onComplete();}}>View Properties →</Btn>
+        </div>
+      )}
+
+      {status==="error"&&(
+        <div style={{textAlign:"center",padding:"32px 0"}}>
+          <div style={{fontSize:40,marginBottom:12}}>❌</div>
+          <div style={{color:C.red,fontSize:16,fontWeight:700,marginBottom:8}}>Import Failed</div>
+          <div style={{color:C.muted,fontSize:13,marginBottom:16}}>{result?.error||"Unknown error"}</div>
+          <Btn variant="ghost" onClick={()=>setStatus("idle")}>Try Again</Btn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ── Cloud Storage UI ──────────────────────────────────────────────────────────
 function CloudStoragePanel({userTier}) {
   const [status, setStatus] = useState("checking"); // checking | connected | offline
@@ -4649,6 +4799,7 @@ export default function HomeStory() {
               {icon:"⚡",label:"Log a Job",screen:"log"},
               {icon:"🔧",label:"Contractor Pro",screen:"contractor"},
               {icon:"☁️",label:"Cloud Storage",screen:"cloud"},
+              {icon:"📂",label:"Import from Roofr CSV",screen:"csv_import"},
               {icon:"💰",label:"Plans & Pricing",screen:"pricing"},
               {icon:"🏅",label:"Verified Program",screen:"contractor"},
               {icon:"⚖️",label:"Community Standards",screen:"standards"},
@@ -4692,7 +4843,7 @@ export default function HomeStory() {
         </div>
 
         {/* Nav tabs for search/contractor */}
-        {(screen==="search"||screen==="log"||screen==="contractor"||screen==="pricing"||screen==="standards"||screen==="landlord"||screen==="cloud"||screen==="sale_inspection")&&(
+        {(screen==="search"||screen==="log"||screen==="contractor"||screen==="pricing"||screen==="standards"||screen==="landlord"||screen==="cloud"||screen==="sale_inspection"||screen==="csv_import")&&(
           <div style={{display:"flex",borderTop:`1px solid ${C.border}`}}>
             {(userRole==="landlord"
               ? [["search","🔍 Search"],["landlord","🏘️ Units"],["log","⚡ Log"],["pricing","💰 Plans"]]
@@ -4723,12 +4874,14 @@ export default function HomeStory() {
         {screen==="pricing"&&<PricingPage onUpgrade={()=>{setUserTier("contractor");setScreen("contractor");}}/>}
         {screen==="standards"&&<CommunityStandards properties={properties} userTier={userTier}/>}
         {screen==="cloud"&&<CloudStoragePanel userTier={userTier}/>}
+        {screen==="csv_import"&&<CSVImportScreen onComplete={()=>setScreen("search")}/>}
         {screen==="sale_inspection"&&<SaleInspectionUpload property={selected||DEMO_PROPERTIES[0]} onComplete={()=>setScreen("search")}/>}
         {screen==="landlord"&&<LandlordDashboard properties={properties} setProperties={setProperties} onSelect={p=>{setListingProperty(p);setScreen("listing");}} onLogJob={()=>setScreen("log")}/>}
         {screen==="listing"&&listingProperty&&<RentalListing property={listingProperty} onBack={()=>setScreen("landlord")} onTenantRequest={p=>{setTenantRequestProp(p);setScreen("tenant_request");}}/> }
         {screen==="tenant_request"&&tenantRequestProp&&<TenantRequest property={tenantRequestProp} onSubmit={req=>{ /* In production: save to database and send push notification */ }} onBack={()=>setScreen("listing")}/>}
         {showPaywall&&<PaywallModal feature={showPaywall} userTier={userTier} onUpgrade={()=>{setUserTier("contractor");setShowPaywall(null);}} onPayPerReport={(price)=>{setPaidReports(p=>[...p,showPaywall]);setShowPaywall(null);}} onClose={()=>setShowPaywall(null)}/>}
       </div>
+
     </div>
   );
 }
