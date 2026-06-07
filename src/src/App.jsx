@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
+
 // ── Theme ─────────────────────────────────────────────────────────────────────
 const C = {
   bg:"#080b12", surface:"#0e1420", card:"#131b2e", card2:"#1a2440",
@@ -324,7 +325,7 @@ function ParcelMap({properties,onSelect,regridToken}) {
             </div>
           ))}
         </div>
-        {!regridToken&&<div style={{position:"absolute",top:8,right:8,background:"#000c",borderRadius:8,padding:"4px 10px",zIndex:1000}}><span style={{color:C.yellow,fontSize:10,fontWeight:600}}>📍 Add Regrid token for parcel lines</span></div>}
+
       </div>
       {loadingParcel&&<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginTop:8,display:"flex",alignItems:"center",gap:10}}><Spinner size={14}/><span style={{color:C.muted,fontSize:13}}>Looking up parcel — {parcelFor}...</span></div>}
       {parcelInfo&&!loadingParcel&&(
@@ -981,193 +982,54 @@ function HomeReportTab({property,notes,setNotes,saved,setSaved}) {
   const scoreLabel=property.roofStatus==="good"?"Good Standing":property.roofStatus==="aging"?"Needs Attention":"Action Required";
   const scoreIcon=property.roofStatus==="good"?"✓":property.roofStatus==="aging"?"⚠":"!";
 
-  const download = async () => {
-    // Load jsPDF if not already loaded
-    if (!window.jspdf) {
-      await new Promise(resolve => {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-        s.onload = resolve; document.head.appendChild(s);
-      });
-    }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit:"pt", format:"letter" });
-    const W = 612, M = 48, RW = W - M * 2;
-    let y = 0;
-
-    // ── Header bar ──
-    doc.setFillColor(232, 118, 44);
-    doc.rect(0, 0, W, 44, "F");
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(11); doc.setFont("helvetica","bold");
-    doc.text("HomeStory", M, 20);
-    doc.setFontSize(8); doc.setFont("helvetica","normal");
-    doc.text("Southern Illinois Property Database", M, 32);
-    doc.setFontSize(8);
-    doc.text(`Report ID: ${reportId}`, W-M, 20, {align:"right"});
-    doc.text(today, W-M, 32, {align:"right"});
-
-    y = 64;
-
-    // ── Address + Score ──
-    const scoreColor = property.roofStatus==="good"?[34,197,94]:property.roofStatus==="aging"?[234,179,8]:[239,68,68];
-    doc.setFillColor(...scoreColor);
-    doc.roundedRect(M, y, 40, 40, 6, 6, "F");
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(20); doc.setFont("helvetica","bold");
-    doc.text(scoreIcon, M+20, y+26, {align:"center"});
-
-    doc.setTextColor(15,23,42);
-    doc.setFontSize(18); doc.setFont("helvetica","bold");
-    doc.text(property.address, M+52, y+14);
-    doc.setFontSize(10); doc.setFont("helvetica","normal");
-    doc.setTextColor(100,116,139);
-    doc.text(`${property.city}, ${property.state} ${property.zip||""}`, M+52, y+28);
-    if(property.ownerName) { doc.setTextColor(59,130,246); doc.text(`Owner: ${property.ownerName}`, M+52, y+40); }
-
-    y += 58;
-
-    // ── Status badge ──
-    doc.setFillColor(...scoreColor.map(c=>Math.round(c*0.15+240*0.85)));
-    doc.roundedRect(M, y, RW, 28, 6, 6, "F");
-    doc.setTextColor(...scoreColor);
-    doc.setFontSize(11); doc.setFont("helvetica","bold");
-    doc.text(`${scoreLabel} — ${property.roofAge}-year-old ${property.roofMaterial} roof`, M+10, y+18);
-    y += 40;
-
-    // ── Stat boxes ──
-    const stats = [["Year Built",property.yearBuilt],["Square Ft",property.sqft?.toLocaleString()],["Last Roof",property.lastRoof],["Roof Age",`${property.roofAge} yrs`],["Material",property.roofMaterial],["Warranty",property.roofWarranty]];
-    const bw = RW/3 - 4;
-    stats.forEach(([k,v], i) => {
-      const bx = M + (i%3)*(bw+6);
-      const by = y + Math.floor(i/3)*46;
-      doc.setFillColor(248,250,252); doc.roundedRect(bx, by, bw, 38, 4, 4, "F");
-      doc.setTextColor(148,163,184); doc.setFontSize(7); doc.setFont("helvetica","normal");
-      doc.text(String(k).toUpperCase(), bx+8, by+13);
-      doc.setTextColor(15,23,42); doc.setFontSize(11); doc.setFont("helvetica","bold");
-      doc.text(String(v||"—"), bx+8, by+28);
+  const download = () => {
+    const lines = [
+      "HOMESTORY HOME REPORT",
+      "=".repeat(56),
+      "Report ID:  " + reportId,
+      "Generated:  " + today,
+      "Status:     " + scoreLabel,
+      "",
+      "PROPERTY",
+      "-".repeat(56),
+      "Address:    " + property.address,
+      "            " + property.city + ", " + property.state + " " + (property.zip||""),
+      "Owner:      " + (property.ownerName||"Not on file"),
+      "Year Built: " + property.yearBuilt + "  |  Sq Ft: " + (property.sqft||"").toLocaleString(),
+      "",
+      "ROOF",
+      "-".repeat(56),
+      "Material:   " + property.roofMaterial,
+      "Replaced:   " + property.lastRoof + "  |  Age: " + property.roofAge + " years",
+      "Warranty:   " + property.roofWarranty,
+      "Condition:  " + s.label,
+      "",
+      "DOCUMENTED HISTORY",
+      "-".repeat(56),
+    ];
+    const sorted = [...property.timeline].sort((a,b)=>b.year-a.year);
+    sorted.forEach(ev => {
+      lines.push(ev.year + "  " + ev.label);
+      lines.push("      " + ev.note);
+      lines.push("      " + ev.source + (ev.verified?" · Verified":""));
+      lines.push("");
     });
-    y += 100;
-
-    // ── Divider helper ──
-    const divider = (label) => {
-      if(y > 680){doc.addPage();y=48;}
-      doc.setFillColor(232,118,44);
-      doc.rect(M, y, 3, 14, "F");
-      doc.setTextColor(15,23,42); doc.setFontSize(11); doc.setFont("helvetica","bold");
-      doc.text(label, M+10, y+10);
-      doc.setDrawColor(226,232,240);
-      doc.line(M, y+18, W-M, y+18);
-      y += 26;
-    };
-
-    // ── Claim history ──
-    if(property.claimHistory?.length) {
-      divider("Claim History");
-      property.claimHistory.forEach(c => {
-        if(y>700){doc.addPage();y=48;}
-        doc.setFillColor(254,252,232); doc.roundedRect(M, y, RW, 32, 4, 4, "F");
-        doc.setTextColor(161,98,7); doc.setFontSize(9); doc.setFont("helvetica","bold");
-        doc.text(`${c.year} — ${c.type.toUpperCase()} · ${c.carrier} · Claim #${c.claimNumber}`, M+8, y+13);
-        doc.setTextColor(120,113,8); doc.setFont("helvetica","normal");
-        doc.text(c.status, M+8, y+24);
-        y += 40;
-      });
-    }
-
-    // ── Mechanical systems ──
-    const mechTypes = TRADE_CATEGORIES["Mechanical"];
-    const mechEvents = property.timeline.filter(e=>mechTypes.includes(e.type));
-    if(mechEvents.length) {
-      divider("Mechanical Systems");
-      mechEvents.forEach(ev => {
-        if(y>700){doc.addPage();y=48;}
-        const tc = TYPE_CFG[ev.type]||TYPE_CFG.photo;
-        const age = new Date().getFullYear()-ev.year;
-        const lifespan = LIFESPANS[ev.type];
-        const pct = lifespan ? Math.min(100, Math.round((age/lifespan)*100)) : null;
-        const barCol = pct>=80?[239,68,68]:pct>=50?[234,179,8]:[34,197,94];
-        doc.setFillColor(248,250,252); doc.roundedRect(M, y, RW, pct!==null?48:36, 4, 4, "F");
-        doc.setTextColor(15,23,42); doc.setFontSize(10); doc.setFont("helvetica","bold");
-        doc.text(`${tc.icon} ${tc.label} — ${ev.year}`, M+8, y+14);
-        doc.setTextColor(100,116,139); doc.setFontSize(8); doc.setFont("helvetica","normal");
-        const noteLines = doc.splitTextToSize(ev.note||"", RW-20);
-        doc.text(noteLines[0]||"", M+8, y+25);
-        if(pct!==null && lifespan) {
-          doc.setFillColor(226,232,240); doc.roundedRect(M+8, y+32, RW-24, 6, 3, 3, "F");
-          doc.setFillColor(...barCol); doc.roundedRect(M+8, y+32, (RW-24)*pct/100, 6, 3, 3, "F");
-          doc.setTextColor(148,163,184); doc.setFontSize(7);
-          doc.text(`${pct}% of ${lifespan}yr lifespan · Est. replacement ${ev.year+lifespan}`, M+8, y+46);
-        }
-        y += pct!==null ? 56 : 44;
-      });
-    }
-
-    // ── Documented history ──
-    divider("Documented History");
-    [...property.timeline]
-      .filter(e=>!mechTypes.includes(e.type))
-      .sort((a,b)=>b.year-a.year)
-      .forEach(ev => {
-        if(y>700){doc.addPage();y=48;}
-        const tc = TYPE_CFG[ev.type]||TYPE_CFG.photo;
-        const isOurWork = ev.source==="Our Work";
-        if(isOurWork){doc.setFillColor(255,247,237);}else{doc.setFillColor(250,252,255);}
-        doc.roundedRect(M, y, RW, 42, 4, 4, "F");
-        if(isOurWork){doc.setFillColor(232,118,44);doc.roundedRect(M, y, 3, 42, 2, 2, "F");}
-        doc.setTextColor(232,118,44); doc.setFontSize(11); doc.setFont("helvetica","bold");
-        doc.text(String(ev.year), M+10, y+14);
-        doc.setTextColor(15,23,42); doc.setFont("helvetica","bold"); doc.setFontSize(9);
-        doc.text(ev.label, M+44, y+14);
-        doc.setFont("helvetica","normal"); doc.setTextColor(100,116,139); doc.setFontSize(8);
-        const noteLines = doc.splitTextToSize(ev.note||"", RW-60);
-        doc.text(noteLines[0]||"", M+44, y+25);
-        doc.setTextColor(148,163,184);
-        doc.text(`${ev.source}${ev.verified?" · ✓ Verified":""}`, M+44, y+35);
-        y += 50;
-      });
-
-    // ── Notes ──
     if(notes) {
-      divider("Notes");
-      doc.setFillColor(248,250,252); doc.roundedRect(M, y, RW, 50, 4, 4, "F");
-      doc.setTextColor(71,85,105); doc.setFontSize(9); doc.setFont("helvetica","normal");
-      const noteLines = doc.splitTextToSize(notes, RW-16);
-      doc.text(noteLines, M+8, y+14);
-      y += 58;
+      lines.push("NOTES", "-".repeat(56), notes, "");
     }
-
-    // ── Assessment ──
-    if(y>620){doc.addPage();y=48;}
-    divider("Professional Assessment");
-    const assessText = property.roofStatus==="critical"
-      ? `This ${property.roofAge}-year-old roof has exceeded its typical 20-25 year service life for Southern Illinois. Based on documented contractor records and condition history, full replacement is recommended before any new insurance policy issuance or claim settlement. The property shows a pattern of deferred maintenance consistent with aging infrastructure.`
-      : property.roofStatus==="aging"
-      ? `This ${property.roofAge}-year-old roof is approaching end of its typical service life. Documented records indicate progressing wear consistent with normal aging in the Southern Illinois climate. A professional inspection is recommended within the next 12 months, and replacement should be budgeted within the next 2-3 years.`
-      : `This ${property.roofAge}-year-old roof was recently replaced with documented materials and warranty on file. Based on verified contractor records, the roof condition is consistent with a sound, well-maintained, insurable structure. No immediate concerns are documented.`;
-    doc.setFillColor(...scoreColor.map(c=>Math.round(c*0.08+248*0.92)));
-    const assessLines = doc.splitTextToSize(assessText, RW-20);
-    const assessH = assessLines.length*13+20;
-    doc.roundedRect(M, y, RW, assessH, 6, 6, "F");
-    doc.setTextColor(...scoreColor); doc.setFontSize(8); doc.setFont("helvetica","bold");
-    doc.text("ASSESSMENT", M+10, y+13);
-    doc.setTextColor(51,65,85); doc.setFont("helvetica","normal"); doc.setFontSize(9);
-    doc.text(assessLines, M+10, y+25);
-    y += assessH + 16;
-
-    // ── Footer ──
-    const pageCount = doc.internal.getNumberOfPages();
-    for(let i=1;i<=pageCount;i++){
-      doc.setPage(i);
-      doc.setFillColor(232,118,44);
-      doc.rect(0, 772, W, 20, "F");
-      doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont("helvetica","normal");
-      doc.text("HomeStory · Southern Illinois Property Database · homestory.app · For professional use only", W/2, 784, {align:"center"});
-      doc.text(`Page ${i} of ${pageCount}`, W-M, 784, {align:"right"});
-    }
-
-    doc.save(`HomeStory_${property.address.replace(/\s+/g,"_")}_Report.pdf`);
-  };
+    lines.push("=".repeat(56));
+    if(property.roofStatus==="critical") lines.push("ASSESSMENT: Roof exceeded service life. Replacement recommended.");
+    if(property.roofStatus==="aging") lines.push("ASSESSMENT: Roof approaching end of service life. Inspect within 12 months.");
+    if(property.roofStatus==="good") lines.push("ASSESSMENT: Roof recently replaced. Condition is sound and insurable.");
+    lines.push("", "HomeStory · homestory.app · Southern Illinois Property Database");
+    const blob = new Blob([lines.join("\n")], {type:"text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "HomeStory_Report_" + property.address.replace(/\s+/g,"_") + ".txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div>
@@ -1331,10 +1193,6 @@ function HomeReportTab({property,notes,setNotes,saved,setSaved}) {
     </div>
   );
 }
-
-// ── Property Detail ───────────────────────────────────────────────────────────
-
-
 
 // ── Measurements Panel ────────────────────────────────────────────────────────
 function MeasurementsPanel({property, onUpdate}) {
@@ -2414,14 +2272,7 @@ function SearchScreen({properties,onSelect,regridToken,setRegridToken}) {
       {/* Map */}
       <ParcelMap properties={properties} onSelect={onSelect} regridToken={regridToken}/>
 
-      {/* Regrid token */}
-      <div style={{marginBottom:14}}>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <input value={regridToken} onChange={e=>setRegridToken(e.target.value)} placeholder="Paste Regrid token for parcel boundaries (free at regrid.com)..."
-            style={{flex:1,background:C.card,border:`1px solid ${regridToken?C.green+"44":C.border}`,borderRadius:10,padding:"9px 12px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
-          {regridToken&&<span style={{color:C.green,fontSize:12,fontWeight:700,flexShrink:0}}>📍 ON</span>}
-        </div>
-      </div>
+
 
       {/* Stats */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
@@ -3966,148 +3817,6 @@ function ContractorDashboard({properties, onSelect, onLogJob, userTier='free', o
   );
 }
 
-export default function HomeStory() {
-  const [screen,setScreen]=useState("role_select"); // role_select | landing | search | property | log | pricing | standards | landlord | listing
-  const [selected,setSelected]=useState(null);
-  const [properties,setProperties]=useState(DEMO_PROPERTIES);
-  const [userTier,setUserTier]=useState("free"); // free | contractor | adjuster | landlord
-  const [userRole,setUserRole]=useState(null); // null | contractor | landlord | adjuster | homeowner
-  const [showPaywall,setShowPaywall]=useState(null); // null or feature name
-  const [listingProperty,setListingProperty]=useState(null);
-  const [tenantRequestProp,setTenantRequestProp]=useState(null);
-  const [paidReports,setPaidReports]=useState([]);
-  const [regridToken,setRegridToken]=useState("");
-  const [menuOpen,setMenuOpen]=useState(false);
-  const [navOpen,setNavOpen]=useState(false);
-
-  useEffect(()=>{
-    (async()=>{const saved=await storageGet("hs:regrid");if(saved)setRegridToken(saved);})();
-  },[]);
-  useEffect(()=>{if(regridToken)storageSet("hs:regrid",regridToken);},[regridToken]);
-
-  const handleSelect=(p)=>{setSelected(p);setScreen("property");};
-  const handleBack=()=>{setScreen("search");setSelected(null);};
-
-  return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans','Helvetica Neue',sans-serif",color:C.text,maxWidth:500,margin:"0 auto"}}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-        input,textarea,select{font-size:16px!important;-webkit-appearance:none}
-        input::placeholder,textarea::placeholder{color:#2d3f5e}
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-thumb{background:#1e2d47;border-radius:2px}
-        button{touch-action:manipulation}
-      `}</style>
-
-      {/* Nav */}
-      <div style={{background:"rgba(8,11,18,0.92)",backdropFilter:"blur(20px)",borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:100}}>
-        {/* Dropdown menu */}
-        {navOpen&&(
-          <div style={{position:"absolute",top:56,left:0,right:0,background:C.surface,borderBottom:`1px solid ${C.border}`,zIndex:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
-            {[
-              {icon:"🏠",label:"Home",screen:"landing"},
-              {icon:"🔍",label:"Search Properties",screen:"search"},
-              {icon:"📝",label:"Upload Inspection Report",screen:"sale_inspection"},
-              {icon:"🏘️",label:"Landlord Hub",screen:"landlord"},
-              {icon:"⚡",label:"Log a Job",screen:"log"},
-              {icon:"🔧",label:"Contractor Pro",screen:"contractor"},
-              {icon:"☁️",label:"Cloud Storage",screen:"cloud"},
-              {icon:"💰",label:"Plans & Pricing",screen:"pricing"},
-              {icon:"🏅",label:"Verified Program",screen:"contractor"},
-              {icon:"⚖️",label:"Community Standards",screen:"standards"},
-            ].map(item=>(
-              <div key={item.label} onClick={()=>{setScreen(item.screen);setNavOpen(false);if(item.sub){/* handled by contractor tab */}}} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 20px",cursor:"pointer",borderBottom:`1px solid ${C.border}22`,WebkitTapHighlightColor:"transparent"}}
-                onMouseEnter={e=>e.currentTarget.style.background=C.card}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <span style={{fontSize:20,width:28,textAlign:"center"}}>{item.icon}</span>
-                <div>
-                  <div style={{color:C.text,fontSize:14,fontWeight:600}}>{item.label}</div>
-                </div>
-                {item.screen===screen&&<div style={{marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:C.accent}}/>}
-              </div>
-            ))}
-            <div style={{padding:"12px 20px",borderTop:`1px solid ${C.border}`}}>
-              <div style={{color:C.dim,fontSize:11}}>HomeStory Beta · Southern Illinois · homestory.app</div>
-            </div>
-          </div>
-        )}
-        {navOpen&&<div style={{position:"fixed",inset:0,zIndex:199}} onClick={()=>setNavOpen(false)}/>}
-
-        <div style={{padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setScreen(screen==="role_select"?"role_select":"landing");setSelected(null);}}>
-            {screen!=="landing"&&screen!=="role_select"&&<button onClick={e=>{e.stopPropagation();setScreen(screen==="property"?"search":["log","contractor","pricing","standards","landlord","listing","tenant_request"].includes(screen)?userRole==="landlord"?"landlord":"search":"landing");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px 0 0",lineHeight:1}}>←</button>}
-            <div style={{background:C.accent,width:28,height:28,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏠</div>
-            <span style={{fontWeight:800,fontSize:16,letterSpacing:-0.5,fontFamily:"'DM Sans',sans-serif"}}>HomeStory</span>
-            <span style={{background:C.accent+"22",color:C.accent,fontSize:8,fontWeight:700,letterSpacing:1.5,padding:"1px 5px",borderRadius:3,textTransform:"uppercase"}}>BETA</span>
-          </div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {screen==="landing"&&<Btn small color={C.accent} onClick={()=>setScreen("search")}>Search →</Btn>}
-            {screen!=="landing"&&<div onClick={()=>setScreen("pricing")} style={{background:userTier==="contractor"?C.accent+"22":C.surface,border:`1px solid ${userTier==="contractor"?C.accent+"44":C.border}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
-              <span style={{color:userTier==="contractor"?C.accent:C.dim,fontSize:10,fontWeight:700}}>{userTier==="contractor"?"⚡ Pro":"Free"}</span>
-            </div>}
-            {screen==="search"&&<button onClick={()=>setMenuOpen(!menuOpen)} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit"}}>⚙️</button>}
-            <button onClick={()=>setNavOpen(!navOpen)} style={{background:navOpen?C.accent+"22":"none",border:`1px solid ${navOpen?C.accent+"44":C.border}`,borderRadius:8,width:36,height:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5,cursor:"pointer",WebkitTapHighlightColor:"transparent",flexShrink:0}}>
-              <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s"}}/>
-              <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s",opacity:navOpen?0:1}}/>
-              <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s"}}/>
-            </button>
-          </div>
-        </div>
-        {menuOpen&&screen==="search"&&(
-          <div style={{padding:"10px 16px 14px",borderTop:`1px solid ${C.border}`}}>
-            <div style={{color:C.muted,fontSize:11,marginBottom:6}}>Paste Regrid token for live parcel boundaries:</div>
-            <div style={{display:"flex",gap:8}}>
-              <input value={regridToken} onChange={e=>setRegridToken(e.target.value)} placeholder="Regrid API token..."
-                style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
-              <button onClick={()=>setMenuOpen(false)} style={{background:regridToken?C.green:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit"}}>{regridToken?"✓ Done":"Skip"}</button>
-            </div>
-            <div style={{color:C.dim,fontSize:10,marginTop:5}}>Free at regrid.com — 25 lookups/day</div>
-          </div>
-        )}
-        {/* Nav tabs for search/contractor */}
-        {(screen==="search"||screen==="log"||screen==="contractor"||screen==="pricing"||screen==="standards"||screen==="landlord"||screen==="cloud"||screen==="sale_inspection")&&(
-          <div style={{display:"flex",borderTop:`1px solid ${C.border}`}}>
-            {(userRole==="landlord"
-              ? [["search","🔍 Search"],["landlord","🏘️ Units"],["log","⚡ Log"],["pricing","💰 Plans"]]
-              : userRole==="contractor"
-              ? [["search","🔍 Search"],["log","⚡ Log"],["contractor","🔧 Pro"],["pricing","💰 Plans"]]
-              : [["search","🔍 Search"],["landlord","🏘️ Landlord"],["contractor","🔧 Contractor"],["pricing","💰 Plans"]]
-            ).map(([k,l])=>(
-              <button key={k} onClick={()=>setScreen(k)} style={{flex:1,background:"none",border:"none",borderBottom:`2px solid ${screen===k?C.accent:"transparent"}`,color:screen===k?C.accent:C.muted,padding:"10px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>{l}</button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div style={{padding:"20px 16px"}}>
-        {screen==="role_select"&&<RoleSelect onSelect={role=>{
-          setUserRole(role);
-          if(role==="landlord"){setUserTier("landlord");setScreen("landlord");}
-          else if(role==="contractor"){setScreen("landing");}
-          else if(role==="adjuster"){setScreen("search");}
-          else{setScreen("landing");}
-        }}/>}
-        {screen==="landing"&&<Landing onGetStarted={()=>setScreen("search")} onSearch={()=>setScreen("search")} userRole={userRole}/>}
-        {screen==="search"&&<SearchScreen properties={properties} onSelect={handleSelect} regridToken={regridToken} setRegridToken={setRegridToken}/>}
-        {screen==="property"&&selected&&<PropertyDetail property={selected} onBack={handleBack} userTier={userTier} userRole={userRole} onShowPaywall={setShowPaywall} paidReports={paidReports}/>}
-        {screen==="log"&&<FastFieldLog properties={properties} setProperties={setProperties} onDone={()=>setScreen("search")}/>}
-        {screen==="contractor"&&<ContractorDashboard properties={properties} onSelect={handleSelect} onLogJob={()=>setScreen("log")} userTier={userTier} onUpgrade={()=>setScreen("pricing")}/>}
-        {screen==="pricing"&&<PricingPage onUpgrade={()=>{setUserTier("contractor");setScreen("contractor");}}/>}
-        {screen==="standards"&&<CommunityStandards properties={properties} userTier={userTier}/>}
-        {screen==="cloud"&&<CloudStoragePanel userTier={userTier}/>}
-        {screen==="sale_inspection"&&<SaleInspectionUpload property={selected||DEMO_PROPERTIES[0]} onComplete={()=>setScreen("search")}/>}
-        {screen==="landlord"&&<LandlordDashboard properties={properties} setProperties={setProperties} onSelect={p=>{setListingProperty(p);setScreen("listing");}} onLogJob={()=>setScreen("log")}/>}
-        {screen==="listing"&&listingProperty&&<RentalListing property={listingProperty} onBack={()=>setScreen("landlord")} onTenantRequest={p=>{setTenantRequestProp(p);setScreen("tenant_request");}}/> }
-        {screen==="tenant_request"&&tenantRequestProp&&<TenantRequest property={tenantRequestProp} onSubmit={req=>{ /* In production: save to database and send push notification */ }} onBack={()=>setScreen("listing")}/>}
-        {showPaywall&&<PaywallModal feature={showPaywall} userTier={userTier} onUpgrade={()=>{setUserTier("contractor");setShowPaywall(null);}} onPayPerReport={(price)=>{setPaidReports(p=>[...p,showPaywall]);setShowPaywall(null);}} onClose={()=>setShowPaywall(null)}/>}
-      </div>
-    </div>
-  );
-}
 
 
 // ── Documents Folder ──────────────────────────────────────────────────────────
@@ -4540,6 +4249,156 @@ function DocumentsFolder({property}) {
 
 
 
+
+// ── CSV Import Screen ─────────────────────────────────────────────────────────
+function CSVImportScreen({onComplete}) {
+  const [status, setStatus] = useState("idle"); // idle | parsing | uploading | done | error
+  const [result, setResult] = useState(null);
+  const [preview, setPreview] = useState([]);
+  const fileRef = useRef();
+
+  const parseCSV = (text) => {
+    const lines = text.split("\n").filter(l=>l.trim());
+    const headers = lines[0].split(",").map(h=>h.replace(/"/g,"").trim());
+    const rows = [];
+    for(let i=1;i<lines.length;i++) {
+      const vals = [];
+      let cur = "", inQ = false;
+      for(const ch of lines[i]) {
+        if(ch==='"') inQ=!inQ;
+        else if(ch===","&&!inQ) { vals.push(cur.trim()); cur=""; }
+        else cur+=ch;
+      }
+      vals.push(cur.trim());
+      const row = {};
+      headers.forEach((h,j)=>{ row[h]=vals[j]||""; });
+      rows.push(row);
+    }
+    return rows;
+  };
+
+  const handleFile = async (file) => {
+    if(!file) return;
+    setStatus("parsing");
+    const text = await file.text();
+    const rows = parseCSV(text);
+    setPreview(rows.slice(0,5));
+    setStatus("ready");
+    window._csvRows = rows;
+  };
+
+  const handleImport = async () => {
+    const rows = window._csvRows;
+    if(!rows||!rows.length) return;
+    setStatus("uploading");
+    try {
+      const res = await fetch("https://homestory-server-production.up.railway.app/api/import-csv", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({rows}),
+      });
+      const data = await res.json();
+      setResult(data);
+      setStatus("done");
+    } catch(err) {
+      setStatus("error");
+      setResult({error: err.message});
+    }
+  };
+
+  return (
+    <div style={{paddingBottom:40}}>
+      <div style={{marginBottom:20}}>
+        <div style={{color:C.accent,fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>Historical Import</div>
+        <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:24,letterSpacing:-0.5,marginBottom:8}}>Import from Roofr CSV</h2>
+        <p style={{color:C.muted,fontSize:13,lineHeight:1.7}}>Upload your Roofr job export to bring your full job history into HomeStory. Every address becomes a permanent property record.</p>
+      </div>
+
+      {status==="idle"&&(
+        <div>
+          <div onClick={()=>fileRef.current.click()} style={{border:`2px dashed ${C.border}`,borderRadius:14,padding:"48px 20px",textAlign:"center",cursor:"pointer",marginBottom:16,background:C.card}}>
+            <div style={{fontSize:40,marginBottom:10}}>📂</div>
+            <div style={{color:C.text,fontSize:15,fontWeight:700,marginBottom:6}}>Upload Roofr CSV Export</div>
+            <div style={{color:C.muted,fontSize:13}}>job-report-export-*.csv</div>
+          </div>
+          <input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16}}>
+            <div style={{color:C.muted,fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>How to export from Roofr</div>
+            {["1. Go to Jobs in Roofr","2. Click Export or Download","3. Select All Jobs / CSV format","4. Upload that file here"].map((s,i)=>(
+              <div key={i} style={{color:C.muted,fontSize:13,padding:"4px 0"}}>{s}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {status==="parsing"&&(
+        <div style={{textAlign:"center",padding:"48px 0"}}>
+          <Spinner size={40}/>
+          <div style={{color:C.muted,fontSize:14,marginTop:16}}>Reading CSV file...</div>
+        </div>
+      )}
+
+      {status==="ready"&&(
+        <div>
+          <div style={{background:C.green+"0a",border:`1px solid ${C.green}33`,borderRadius:12,padding:16,marginBottom:16}}>
+            <div style={{color:C.green,fontSize:14,fontWeight:700,marginBottom:4}}>✓ {window._csvRows?.length} jobs ready to import</div>
+            <div style={{color:C.muted,fontSize:12}}>Preview of first 5 rows:</div>
+          </div>
+          {preview.map((row,i)=>(
+            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 14px",marginBottom:8}}>
+              <div style={{color:C.text,fontSize:13,fontWeight:600,marginBottom:2}}>{row["Job address"]}</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <Pill color={row["Stage category"]==="Completed"?C.green:row["Stage category"]==="Won"?C.blue:C.muted}>{row["Stage category"]}</Pill>
+                {row["Customer name"]&&<Pill color={C.dim}>{row["Customer name"]}</Pill>}
+                {parseFloat(row["Job value"])>0&&<Pill color={C.accent}>${parseFloat(row["Job value"]).toLocaleString()}</Pill>}
+              </div>
+            </div>
+          ))}
+          <div style={{marginTop:16,display:"flex",gap:10}}>
+            <Btn variant="ghost" onClick={()=>{setStatus("idle");setPreview([]);}}>Cancel</Btn>
+            <Btn full color={C.accent} onClick={handleImport}>Import All {window._csvRows?.length} Jobs →</Btn>
+          </div>
+        </div>
+      )}
+
+      {status==="uploading"&&(
+        <div style={{textAlign:"center",padding:"48px 0"}}>
+          <Spinner size={40}/>
+          <div style={{color:C.text,fontSize:16,fontWeight:700,marginTop:16,marginBottom:8}}>Importing jobs...</div>
+          <div style={{color:C.muted,fontSize:13}}>Building your Southern Illinois property database</div>
+        </div>
+      )}
+
+      {status==="done"&&result&&(
+        <div style={{textAlign:"center",padding:"32px 0"}}>
+          <div style={{fontSize:52,marginBottom:16}}>✅</div>
+          <div style={{color:C.green,fontSize:20,fontWeight:800,marginBottom:8}}>Import Complete</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24}}>
+            {[["Imported",result.imported,C.green],["Skipped",result.skipped,C.yellow],["Errors",result.errors,C.red]].map(([l,v,c])=>(
+              <div key={l} style={{background:C.card,border:`1px solid ${c}33`,borderRadius:12,padding:"16px 10px",textAlign:"center"}}>
+                <div style={{color:c,fontSize:24,fontWeight:800}}>{v}</div>
+                <div style={{color:C.muted,fontSize:11,fontWeight:700,textTransform:"uppercase",marginTop:3}}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{color:C.muted,fontSize:13,marginBottom:24}}>Your property database now includes your full Roofr job history.</div>
+          <Btn full color={C.accent} onClick={()=>{setStatus("idle");onComplete&&onComplete();}}>View Properties →</Btn>
+        </div>
+      )}
+
+      {status==="error"&&(
+        <div style={{textAlign:"center",padding:"32px 0"}}>
+          <div style={{fontSize:40,marginBottom:12}}>❌</div>
+          <div style={{color:C.red,fontSize:16,fontWeight:700,marginBottom:8}}>Import Failed</div>
+          <div style={{color:C.muted,fontSize:13,marginBottom:16}}>{result?.error||"Unknown error"}</div>
+          <Btn variant="ghost" onClick={()=>setStatus("idle")}>Try Again</Btn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ── Cloud Storage UI ──────────────────────────────────────────────────────────
 function CloudStoragePanel({userTier}) {
   const [status, setStatus] = useState("checking"); // checking | connected | offline
@@ -4848,4 +4707,181 @@ function PrivacySettings({property}) {
   );
 }
 
+export default function HomeStory() {
+  const [screen,setScreen]=useState("role_select"); // role_select | landing | search | property | log | pricing | standards | landlord | listing
+  const [selected,setSelected]=useState(null);
+  const [properties,setProperties]=useState(DEMO_PROPERTIES);
+  const [userTier,setUserTier]=useState("contractor");
 
+  useEffect(()=>{
+    fetch("https://homestory-server-production.up.railway.app/api/properties")
+      .then(r=>r.json())
+      .then(data=>{
+        if(!data.properties||!data.properties.length) return;
+        const dbProps=data.properties.map(p=>({
+          id:"db-"+p.id,
+          address:p.address||"Unknown",
+          city:p.city||"",
+          state:p.state||"IL",
+          zip:p.zip||"",
+          yearBuilt:p.year_built||1990,
+          sqft:p.sqft||1500,
+          stories:1,
+          style:p.style||"Ranch",
+          lastRoof:p.last_roof||2010,
+          roofMaterial:p.roof_material||"Unknown",
+          roofWarranty:p.roof_warranty||"Unknown",
+          roofAge:p.roof_age||15,
+          roofStatus:(p.roof_status&&p.roof_status!=="unknown")?p.roof_status:"aging",
+          ourJob:true,
+          ownerName:p.owner_name||"",
+          notes:p.notes||"",
+          claimHistory:[],
+          timeline:(p.timeline||[]).filter(Boolean).map(e=>({
+            id:"ev-"+e.id,
+            year:e.year||new Date().getFullYear(),
+            type:e.type||"roof",
+            label:e.label||"Job logged",
+            note:e.note||"",
+            source:e.source||"Our Work",
+            verified:e.verified!==false,
+            ourJob:e.our_job||false,
+          })),
+          photos:[],
+          buildings:[{id:"main_house",type:"main_house",icon:"🏠",label:"Main House",notes:""}],
+        }));
+        setProperties(prev=>[...dbProps,...DEMO_PROPERTIES]);
+      })
+      .catch(()=>{});
+  },[]);
+ // free | contractor | adjuster | landlord
+  const [userRole,setUserRole]=useState(null); // null | contractor | landlord | adjuster | homeowner
+  const [showPaywall,setShowPaywall]=useState(null); // null or feature name
+  const [listingProperty,setListingProperty]=useState(null);
+  const [tenantRequestProp,setTenantRequestProp]=useState(null);
+  const [paidReports,setPaidReports]=useState([]);
+  const [regridToken,setRegridToken]=useState("");
+  const [menuOpen,setMenuOpen]=useState(false);
+  const [navOpen,setNavOpen]=useState(false);
+
+  useEffect(()=>{
+    (async()=>{const saved=await storageGet("hs:regrid");if(saved)setRegridToken(saved);})();
+  },[]);
+  useEffect(()=>{if(regridToken)storageSet("hs:regrid",regridToken);},[regridToken]);
+
+  const handleSelect=(p)=>{setSelected(p);setScreen("property");};
+  const handleBack=()=>{setScreen("search");setSelected(null);};
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans','Helvetica Neue',sans-serif",color:C.text,maxWidth:500,margin:"0 auto"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        input,textarea,select{font-size:16px!important;-webkit-appearance:none}
+        input::placeholder,textarea::placeholder{color:#2d3f5e}
+        ::-webkit-scrollbar{width:4px;height:4px}
+        ::-webkit-scrollbar-thumb{background:#1e2d47;border-radius:2px}
+        button{touch-action:manipulation}
+      `}</style>
+
+      {/* Nav */}
+      <div style={{background:"rgba(8,11,18,0.92)",backdropFilter:"blur(20px)",borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:100}}>
+        {/* Dropdown menu */}
+        {navOpen&&(
+          <div style={{position:"absolute",top:56,left:0,right:0,background:C.surface,borderBottom:`1px solid ${C.border}`,zIndex:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+            {[
+              {icon:"🏠",label:"Home",screen:"landing"},
+              {icon:"🔍",label:"Search Properties",screen:"search"},
+              {icon:"📝",label:"Upload Inspection Report",screen:"sale_inspection"},
+              {icon:"🏘️",label:"Landlord Hub",screen:"landlord"},
+              {icon:"⚡",label:"Log a Job",screen:"log"},
+              {icon:"🔧",label:"Contractor Pro",screen:"contractor"},
+              {icon:"☁️",label:"Cloud Storage",screen:"cloud"},
+              {icon:"📂",label:"Import from Roofr CSV",screen:"csv_import"},
+              {icon:"💰",label:"Plans & Pricing",screen:"pricing"},
+              {icon:"🏅",label:"Verified Program",screen:"contractor"},
+              {icon:"⚖️",label:"Community Standards",screen:"standards"},
+            ].map(item=>(
+              <div key={item.label} onClick={()=>{setScreen(item.screen);setNavOpen(false);if(item.sub){/* handled by contractor tab */}}} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 20px",cursor:"pointer",borderBottom:`1px solid ${C.border}22`,WebkitTapHighlightColor:"transparent"}}
+                onMouseEnter={e=>e.currentTarget.style.background=C.card}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <span style={{fontSize:20,width:28,textAlign:"center"}}>{item.icon}</span>
+                <div>
+                  <div style={{color:C.text,fontSize:14,fontWeight:600}}>{item.label}</div>
+                </div>
+                {item.screen===screen&&<div style={{marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:C.accent}}/>}
+              </div>
+            ))}
+            <div style={{padding:"12px 20px",borderTop:`1px solid ${C.border}`}}>
+              <div style={{color:C.dim,fontSize:11}}>HomeStory Beta · Southern Illinois · homestory.app</div>
+            </div>
+          </div>
+        )}
+        {navOpen&&<div style={{position:"fixed",inset:0,zIndex:199}} onClick={()=>setNavOpen(false)}/>}
+
+        <div style={{padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setScreen(screen==="role_select"?"role_select":"landing");setSelected(null);}}>
+            {screen!=="landing"&&screen!=="role_select"&&<button onClick={e=>{e.stopPropagation();setScreen(screen==="property"?"search":["log","contractor","pricing","standards","landlord","listing","tenant_request"].includes(screen)?userRole==="landlord"?"landlord":"search":"landing");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px 0 0",lineHeight:1}}>←</button>}
+            <div style={{background:C.accent,width:28,height:28,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏠</div>
+            <span style={{fontWeight:800,fontSize:16,letterSpacing:-0.5,fontFamily:"'DM Sans',sans-serif"}}>HomeStory</span>
+            <span style={{background:C.accent+"22",color:C.accent,fontSize:8,fontWeight:700,letterSpacing:1.5,padding:"1px 5px",borderRadius:3,textTransform:"uppercase"}}>BETA</span>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {screen==="landing"&&<Btn small color={C.accent} onClick={()=>setScreen("search")}>Search →</Btn>}
+            {screen!=="landing"&&<div onClick={()=>setScreen("pricing")} style={{background:userTier==="contractor"?C.accent+"22":C.surface,border:`1px solid ${userTier==="contractor"?C.accent+"44":C.border}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+              <span style={{color:userTier==="contractor"?C.accent:C.dim,fontSize:10,fontWeight:700}}>{userTier==="contractor"?"⚡ Pro":"Free"}</span>
+            </div>}
+
+            <button onClick={()=>setNavOpen(!navOpen)} style={{background:navOpen?C.accent+"22":"none",border:`1px solid ${navOpen?C.accent+"44":C.border}`,borderRadius:8,width:36,height:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5,cursor:"pointer",WebkitTapHighlightColor:"transparent",flexShrink:0}}>
+              <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s"}}/>
+              <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s",opacity:navOpen?0:1}}/>
+              <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s"}}/>
+            </button>
+          </div>
+        </div>
+
+        {/* Nav tabs for search/contractor */}
+        {(screen==="search"||screen==="log"||screen==="contractor"||screen==="pricing"||screen==="standards"||screen==="landlord"||screen==="cloud"||screen==="sale_inspection"||screen==="csv_import")&&(
+          <div style={{display:"flex",borderTop:`1px solid ${C.border}`}}>
+            {(userRole==="landlord"
+              ? [["search","🔍 Search"],["landlord","🏘️ Units"],["log","⚡ Log"],["pricing","💰 Plans"]]
+              : userRole==="contractor"
+              ? [["search","🔍 Search"],["log","⚡ Log"],["contractor","🔧 Pro"],["pricing","💰 Plans"]]
+              : [["search","🔍 Search"],["landlord","🏘️ Landlord"],["contractor","🔧 Contractor"],["pricing","💰 Plans"]]
+            ).map(([k,l])=>(
+              <button key={k} onClick={()=>setScreen(k)} style={{flex:1,background:"none",border:"none",borderBottom:`2px solid ${screen===k?C.accent:"transparent"}`,color:screen===k?C.accent:C.muted,padding:"10px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>{l}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div style={{padding:"20px 16px"}}>
+        {screen==="role_select"&&<RoleSelect onSelect={role=>{
+          setUserRole(role);
+          if(role==="landlord"){setUserTier("landlord");setScreen("landlord");}
+          else if(role==="contractor"){setScreen("landing");}
+          else if(role==="adjuster"){setScreen("search");}
+          else{setScreen("landing");}
+        }}/>}
+        {screen==="landing"&&<Landing onGetStarted={()=>setScreen("search")} onSearch={()=>setScreen("search")} userRole={userRole}/>}
+        {screen==="search"&&<SearchScreen properties={properties} onSelect={handleSelect} regridToken={regridToken} setRegridToken={setRegridToken}/>}
+        {screen==="property"&&selected&&<PropertyDetail property={selected} onBack={handleBack} userTier={userTier} userRole={userRole} onShowPaywall={setShowPaywall} paidReports={paidReports}/>}
+        {screen==="log"&&<FastFieldLog properties={properties} setProperties={setProperties} onDone={()=>setScreen("search")}/>}
+        {screen==="contractor"&&<ContractorDashboard properties={properties} onSelect={handleSelect} onLogJob={()=>setScreen("log")} userTier={userTier} onUpgrade={()=>setScreen("pricing")}/>}
+        {screen==="pricing"&&<PricingPage onUpgrade={()=>{setUserTier("contractor");setScreen("contractor");}}/>}
+        {screen==="standards"&&<CommunityStandards properties={properties} userTier={userTier}/>}
+        {screen==="cloud"&&<CloudStoragePanel userTier={userTier}/>}
+        {screen==="csv_import"&&<CSVImportScreen onComplete={()=>setScreen("search")}/>}
+        {screen==="sale_inspection"&&<SaleInspectionUpload property={selected||DEMO_PROPERTIES[0]} onComplete={()=>setScreen("search")}/>}
+        {screen==="landlord"&&<LandlordDashboard properties={properties} setProperties={setProperties} onSelect={p=>{setListingProperty(p);setScreen("listing");}} onLogJob={()=>setScreen("log")}/>}
+        {screen==="listing"&&listingProperty&&<RentalListing property={listingProperty} onBack={()=>setScreen("landlord")} onTenantRequest={p=>{setTenantRequestProp(p);setScreen("tenant_request");}}/> }
+        {screen==="tenant_request"&&tenantRequestProp&&<TenantRequest property={tenantRequestProp} onSubmit={req=>{ /* In production: save to database and send push notification */ }} onBack={()=>setScreen("listing")}/>}
+        {showPaywall&&<PaywallModal feature={showPaywall} userTier={userTier} onUpgrade={()=>{setUserTier("contractor");setShowPaywall(null);}} onPayPerReport={(price)=>{setPaidReports(p=>[...p,showPaywall]);setShowPaywall(null);}} onClose={()=>setShowPaywall(null)}/>}
+      </div>
+
+    </div>
+  );
+}
