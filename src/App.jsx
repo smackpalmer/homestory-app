@@ -2435,6 +2435,18 @@ function SearchScreen({properties,onSelect,regridToken,setRegridToken}) {
                   <div style={{color:C.muted,fontSize:12}}>{p.city}, {p.state} · Built {p.yearBuilt} · {p.sqft?.toLocaleString()} sq ft</div>
                   {p.ownerName&&<div style={{color:C.blue,fontSize:11,fontWeight:600,marginTop:2}}>👤 {p.ownerName}</div>}
                   <div style={{color:C.dim,fontSize:11,marginTop:2}}>{p.timeline.length} records · {p.roofMaterial}</div>
+                  {(()=>{
+                    const recentTags = p.timeline?.filter(e=>e.tags&&e.tags.length).sort((a,b)=>b.year-a.year)[0]?.tags||[];
+                    const tagDefs=[{id:"full_replacement",label:"Full Replacement",color:C.green},{id:"repair",label:"Repair",color:C.yellow},{id:"emergency",label:"Emergency",color:C.red},{id:"insurance_claim",label:"Claim",color:C.purple},{id:"new_decking",label:"New Decking",color:C.accent},{id:"hail",label:"Hail",color:C.blue},{id:"wind",label:"Wind",color:C.blue},{id:"fire_damage",label:"Fire",color:C.red},{id:"flood_damage",label:"Flood",color:C.blue},{id:"tree_strike",label:"Tree Strike",color:C.red},{id:"earthquake",label:"Earthquake",color:C.red},{id:"warranty_30yr",label:"30yr Warranty",color:C.green},{id:"warranty_25yr",label:"25yr Warranty",color:C.green},{id:"gaf",label:"GAF",color:C.accent},{id:"owens_corning",label:"Owens Corning",color:C.accent},{id:"certainteed",label:"CertainTeed",color:C.accent}];
+                    return recentTags.length ? (
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:5}}>
+                        {recentTags.slice(0,4).map(id=>{
+                          const tag=tagDefs.find(t=>t.id===id);
+                          return tag?<span key={id} style={{background:tag.color+"22",color:tag.color,borderRadius:20,padding:"1px 8px",fontSize:9,fontWeight:700}}>{tag.label}</span>:null;
+                        })}
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div style={{color:s.color,fontWeight:800,fontSize:22,lineHeight:1}}>{p.roofAge}yr</div>
