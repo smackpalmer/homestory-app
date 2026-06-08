@@ -4733,7 +4733,7 @@ export default function HomeStory() {
           variables:{colorPrimary:"#e8762c",colorBackground:"#0e1420",colorText:"#f0f4ff",colorInputBackground:"#131b2e",colorInputText:"#f0f4ff"},
           elements:{card:{background:"#0e1420",border:"1px solid #1e2d47",borderRadius:16},headerTitle:{color:"#f0f4ff"},headerSubtitle:{color:"#6b7fa3"}}
         }}
-        routing="hash"
+        
       />
     </div>
   );
@@ -4860,7 +4860,7 @@ export default function HomeStory() {
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             {screen==="landing"&&<Btn small color={C.accent} onClick={()=>setScreen("search")}>Search →</Btn>}
-            {screen!=="landing"&&<div style={{display:"flex",alignItems:"center",gap:8}}><div onClick={()=>setScreen("pricing")} style={{background:userTier==="contractor"?C.accent+"22":C.surface,border:`1px solid ${userTier==="contractor"?C.accent+"44":C.border}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}><span style={{color:userTier==="contractor"?C.accent:C.dim,fontSize:10,fontWeight:700}}>{userTier==="contractor"?"⚡ Pro":"Free"}</span></div><UserButton afterSignOutUrl="/"/></div>}
+            {screen!=="landing"&&<div style={{display:"flex",alignItems:"center",gap:8}}><div onClick={()=>setScreen("pricing")} style={{background:userTier==="contractor"?C.accent+"22":C.surface,border:`1px solid ${userTier==="contractor"?C.accent+"44":C.border}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}><span style={{color:userTier==="contractor"?C.accent:C.dim,fontSize:10,fontWeight:700}}>{userTier==="contractor"?"⚡ Pro":"Free"}</span></div><UserButton /></div>}
 
             <button onClick={()=>setNavOpen(!navOpen)} style={{background:navOpen?C.accent+"22":"none",border:`1px solid ${navOpen?C.accent+"44":C.border}`,borderRadius:8,width:36,height:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5,cursor:"pointer",WebkitTapHighlightColor:"transparent",flexShrink:0}}>
               <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s"}}/>
