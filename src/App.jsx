@@ -258,6 +258,11 @@ function Timeline({events}) {
                 <Pill color={isOurWork?C.accent:C.dim}>{ev.source}</Pill>
                 {ev.verified&&<Pill color={C.green}>✓ Verified</Pill>}
                 {ev.preLoss&&<Pill color={C.yellow}>Pre-Loss Doc</Pill>}
+                {ev.tags&&ev.tags.map(id=>{
+                  const tagDefs=[{id:"full_replacement",label:"Full Replacement",color:C.green},{id:"repair",label:"Repair",color:C.yellow},{id:"emergency",label:"Emergency",color:C.red},{id:"warranty_work",label:"Warranty Work",color:C.blue},{id:"insurance_claim",label:"Insurance Claim",color:C.purple},{id:"new_decking",label:"New Decking",color:C.accent},{id:"partial_decking",label:"Partial Decking",color:C.accent},{id:"ice_water_shield",label:"Ice & Water",color:C.blue},{id:"ridge_cap",label:"Ridge Cap",color:C.muted},{id:"flashing",label:"Flashing",color:C.muted},{id:"gutters",label:"Gutters",color:C.blue},{id:"skylights",label:"Skylights",color:C.blue},{id:"chimney",label:"Chimney",color:C.muted},{id:"hail",label:"Hail",color:C.blue},{id:"wind",label:"Wind",color:C.blue},{id:"storm",label:"Storm",color:C.purple},{id:"leak",label:"Leak",color:C.yellow},{id:"age",label:"Age",color:C.muted},{id:"structural",label:"Structural",color:C.red},{id:"gaf",label:"GAF",color:C.accent},{id:"owens_corning",label:"Owens Corning",color:C.accent},{id:"certainteed",label:"CertainTeed",color:C.accent},{id:"iko",label:"IKO",color:C.accent},{id:"metal",label:"Metal",color:C.muted},{id:"tpo",label:"TPO",color:C.muted},{id:"flat",label:"Flat",color:C.muted},{id:"warranty_30yr",label:"30yr Warranty",color:C.green},{id:"warranty_25yr",label:"25yr Warranty",color:C.green},{id:"warranty_20yr",label:"20yr Warranty",color:C.green},{id:"warranty_10yr",label:"10yr Warranty",color:C.yellow},{id:"warranty_none",label:"No Warranty",color:C.red},{id:"warranty_mfg",label:"Manufacturer",color:C.blue},{id:"warranty_labor",label:"Workmanship",color:C.accent}];
+                  const tag=tagDefs.find(t=>t.id===id);
+                  return tag?<Pill key={id} color={tag.color}>{tag.label}</Pill>:null;
+                })}
               </div>
             </div>
           </div>
@@ -1726,6 +1731,59 @@ function FastFieldLog({properties, setProperties, onDone}) {
   const [jobNum, setJobNum] = useState("");
   const [saved, setSaved] = useState(false);
   const [buildingId, setBuildingId] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
+
+  const JOB_TAGS = {
+    "Job Type": [
+      {id:"full_replacement", label:"Full Replacement", color:C.green},
+      {id:"repair",           label:"Repair",           color:C.yellow},
+      {id:"emergency",        label:"Emergency",        color:C.red},
+      {id:"warranty_work",    label:"Warranty Work",    color:C.blue},
+      {id:"insurance_claim",  label:"Insurance Claim",  color:C.purple},
+    ],
+    "Roof Details": [
+      {id:"new_decking",        label:"New Decking",        color:C.accent},
+      {id:"partial_decking",    label:"Partial Decking",    color:C.accent},
+      {id:"ice_water_shield",   label:"Ice & Water Shield", color:C.blue},
+      {id:"ridge_cap",          label:"Ridge Cap",          color:C.muted},
+      {id:"flashing",           label:"Flashing",           color:C.muted},
+      {id:"gutters",            label:"Gutters",            color:C.blue},
+      {id:"skylights",          label:"Skylights",          color:C.blue},
+      {id:"chimney",            label:"Chimney",            color:C.muted},
+    ],
+    "Warranty": [
+      {id:"warranty_30yr",      label:"30yr Warranty",      color:C.green},
+      {id:"warranty_25yr",      label:"25yr Warranty",      color:C.green},
+      {id:"warranty_20yr",      label:"20yr Warranty",      color:C.green},
+      {id:"warranty_10yr",      label:"10yr Warranty",      color:C.yellow},
+      {id:"warranty_none",      label:"No Warranty",        color:C.red},
+      {id:"warranty_mfg",       label:"Manufacturer",       color:C.blue},
+      {id:"warranty_labor",     label:"Workmanship",        color:C.accent},
+    ],
+    "Damage Type": [
+      {id:"hail",             label:"Hail",             color:C.blue},
+      {id:"wind",             label:"Wind",             color:C.blue},
+      {id:"storm",            label:"Storm",            color:C.purple},
+      {id:"leak",             label:"Leak",             color:C.yellow},
+      {id:"age",              label:"Age",              color:C.muted},
+      {id:"structural",       label:"Structural",       color:C.red},
+    ],
+    "Materials": [
+      {id:"gaf",              label:"GAF",              color:C.accent},
+      {id:"owens_corning",    label:"Owens Corning",    color:C.accent},
+      {id:"certainteed",      label:"CertainTeed",      color:C.accent},
+      {id:"iko",              label:"IKO",              color:C.accent},
+      {id:"metal",            label:"Metal",            color:C.muted},
+      {id:"tpo",              label:"TPO",              color:C.muted},
+      {id:"flat",             label:"Flat",             color:C.muted},
+    ],
+  };
+
+  const toggleTag = (id) => {
+    setSelectedTags(prev => prev.includes(id) ? prev.filter(t=>t!==id) : [...prev, id]);
+  };
+
+  const allTags = Object.values(JOB_TAGS).flat();
 
   const matchedProp = properties.find(p =>
     address && p.address.toLowerCase().includes(address.toLowerCase()) &&
@@ -1746,6 +1804,7 @@ function FastFieldLog({properties, setProperties, onDone}) {
       verified: true,
       ourJob: true,
       buildingId: buildingId || "main_house",
+      tags: selectedTags,
     };
     if(matchedProp) {
       const updated = { ...matchedProp, timeline: [...matchedProp.timeline, event] };
@@ -1772,7 +1831,7 @@ function FastFieldLog({properties, setProperties, onDone}) {
       <div style={{color:C.muted,fontSize:14,marginBottom:4}}>{address}, {city}</div>
       {tc&&<div style={{color:C.dim,fontSize:13,marginBottom:32}}>{tc.icon} {tc.label} · {year}</div>}
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        <Btn full color={C.accent} onClick={()=>{setStep(1);setAddress("");setSelectedType(null);setNote("");setJobNum("");setSaved(false);}}>Log Another Job</Btn>
+        <Btn full color={C.accent} onClick={()=>{setStep(1);setAddress("");setSelectedType(null);setNote("");setJobNum("");setSaved(false);setSelectedTags([]);}}>Log Another Job</Btn>
         <Btn full variant="ghost" onClick={onDone}>Back to Search</Btn>
       </div>
     </div>
@@ -1859,6 +1918,37 @@ function FastFieldLog({properties, setProperties, onDone}) {
               <span style={{color:C.muted,fontSize:12}}>⏱ Typical lifespan: <strong style={{color:C.text}}>{LIFESPANS[selectedType]} yrs</strong> · Next service ~<strong style={{color:C.accent}}>{parseInt(year)+LIFESPANS[selectedType]}</strong></span>
             </div>
           )}
+
+          {/* Tags */}
+          <div style={{marginBottom:16}}>
+            <div style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:12}}>Job Tags (optional)</div>
+            {Object.entries(JOB_TAGS).map(([category, tags])=>(
+              (selectedType==="roof" || !["Roof Details","Damage Type","Materials","Warranty"].includes(category)) ? (
+                <div key={category} style={{marginBottom:12}}>
+                  <div style={{color:C.dim,fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginBottom:7}}>{category}</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {tags.map(tag=>{
+                      const sel = selectedTags.includes(tag.id);
+                      return (
+                        <div key={tag.id} onClick={()=>toggleTag(tag.id)}
+                          style={{background:sel?tag.color+"33":C.card,border:`1px solid ${sel?tag.color:C.border}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                          <span style={{color:sel?tag.color:C.muted,fontSize:11,fontWeight:700}}>{tag.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null
+            ))}
+            {selectedTags.length>0&&(
+              <div style={{marginTop:6,display:"flex",flexWrap:"wrap",gap:5}}>
+                {selectedTags.map(id=>{
+                  const tag = allTags.find(t=>t.id===id);
+                  return tag ? <span key={id} style={{background:tag.color+"22",color:tag.color,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700}}>{tag.label}</span> : null;
+                })}
+              </div>
+            )}
+          </div>
           <div style={{display:"flex",gap:10}}>
             <Btn variant="ghost" small onClick={()=>setStep(2)}>← Back</Btn>
             <Btn full color={C.accent} onClick={handleSave}>✓ Log This Job</Btn>
