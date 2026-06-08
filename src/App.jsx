@@ -4709,6 +4709,7 @@ function PrivacySettings({property}) {
 }
 
 export default function HomeStory() {
+  // v2
   const [screen,setScreen]=useState("role_select"); // role_select | landing | search | property | log | pricing | standards | landlord | listing
   const [selected,setSelected]=useState(null);
   const [properties,setProperties]=useState(DEMO_PROPERTIES);
