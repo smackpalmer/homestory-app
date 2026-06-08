@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useAuth, useUser, SignIn, SignUp, UserButton } from "@clerk/clerk-react";
 
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -4708,6 +4709,35 @@ function PrivacySettings({property}) {
 }
 
 export default function HomeStory() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+
+  // Show loading while Clerk initializes
+  if(!isLoaded) return (
+    <div style={{minHeight:"100vh",background:"#080b12",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{color:"#e8762c",fontSize:14,fontWeight:700}}>Loading HomeStory...</div>
+    </div>
+  );
+
+  // Show sign-in if not authenticated
+  if(!isSignedIn) return (
+    <div style={{minHeight:"100vh",background:"#080b12",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'DM Sans',sans-serif"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&display=swap');`}</style>
+      <div style={{marginBottom:32,textAlign:"center"}}>
+        <div style={{background:"#e8762c",width:56,height:56,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🏠</div>
+        <div style={{fontFamily:"'Instrument Serif',serif",fontSize:28,color:"#f0f4ff",marginBottom:8}}>Welcome to HomeStory</div>
+        <div style={{color:"#6b7fa3",fontSize:14}}>Southern Illinois Property Database</div>
+      </div>
+      <SignIn 
+        appearance={{
+          variables:{colorPrimary:"#e8762c",colorBackground:"#0e1420",colorText:"#f0f4ff",colorInputBackground:"#131b2e",colorInputText:"#f0f4ff"},
+          elements:{card:{background:"#0e1420",border:"1px solid #1e2d47",borderRadius:16},headerTitle:{color:"#f0f4ff"},headerSubtitle:{color:"#6b7fa3"}}
+        }}
+        routing="hash"
+      />
+    </div>
+  );
+
   const [screen,setScreen]=useState("role_select"); // role_select | landing | search | property | log | pricing | standards | landlord | listing
   const [selected,setSelected]=useState(null);
   const [properties,setProperties]=useState(DEMO_PROPERTIES);
@@ -4830,9 +4860,7 @@ export default function HomeStory() {
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             {screen==="landing"&&<Btn small color={C.accent} onClick={()=>setScreen("search")}>Search →</Btn>}
-            {screen!=="landing"&&<div onClick={()=>setScreen("pricing")} style={{background:userTier==="contractor"?C.accent+"22":C.surface,border:`1px solid ${userTier==="contractor"?C.accent+"44":C.border}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
-              <span style={{color:userTier==="contractor"?C.accent:C.dim,fontSize:10,fontWeight:700}}>{userTier==="contractor"?"⚡ Pro":"Free"}</span>
-            </div>}
+            {screen!=="landing"&&<div style={{display:"flex",alignItems:"center",gap:8}}><div onClick={()=>setScreen("pricing")} style={{background:userTier==="contractor"?C.accent+"22":C.surface,border:`1px solid ${userTier==="contractor"?C.accent+"44":C.border}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}><span style={{color:userTier==="contractor"?C.accent:C.dim,fontSize:10,fontWeight:700}}>{userTier==="contractor"?"⚡ Pro":"Free"}</span></div><UserButton afterSignOutUrl="/"/></div>}
 
             <button onClick={()=>setNavOpen(!navOpen)} style={{background:navOpen?C.accent+"22":"none",border:`1px solid ${navOpen?C.accent+"44":C.border}`,borderRadius:8,width:36,height:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5,cursor:"pointer",WebkitTapHighlightColor:"transparent",flexShrink:0}}>
               <div style={{width:16,height:2,background:navOpen?C.accent:C.muted,borderRadius:2,transition:"all 0.2s"}}/>
