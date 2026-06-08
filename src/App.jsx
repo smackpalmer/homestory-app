@@ -4709,34 +4709,6 @@ function PrivacySettings({property}) {
 }
 
 export default function HomeStory() {
-  const { isSignedIn, isLoaded } = useAuth();
-  const { user } = useUser();
-
-  // Show loading while Clerk initializes
-  if(!isLoaded) return (
-    <div style={{minHeight:"100vh",background:"#080b12",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{color:"#e8762c",fontSize:14,fontWeight:700}}>Loading HomeStory...</div>
-    </div>
-  );
-
-  // Show sign-in if not authenticated
-  if(!isSignedIn) return (
-    <div style={{minHeight:"100vh",background:"#080b12",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'DM Sans',sans-serif"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&display=swap');`}</style>
-      <div style={{marginBottom:32,textAlign:"center"}}>
-        <div style={{background:"#e8762c",width:56,height:56,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🏠</div>
-        <div style={{fontFamily:"'Instrument Serif',serif",fontSize:28,color:"#f0f4ff",marginBottom:8}}>Welcome to HomeStory</div>
-        <div style={{color:"#6b7fa3",fontSize:14,marginBottom:32}}>Southern Illinois Property Database</div>
-      </div>
-      <div style={{background:"#0e1420",border:"1px solid #1e2d47",borderRadius:16,padding:32,width:"100%",maxWidth:400,textAlign:"center"}}>
-        <div style={{color:"#f0f4ff",fontSize:18,fontWeight:700,marginBottom:8}}>Sign in to continue</div>
-        <div style={{color:"#6b7fa3",fontSize:13,marginBottom:24}}>Use your Google or Apple account</div>
-        <a href="https://wired-redbird-66.clerk.accounts.dev/sign-in?redirect_url=https://tranquil-heliotrope-578310.netlify.app" style={{display:"block",background:"#e8762c",color:"#fff",borderRadius:10,padding:"14px 24px",fontSize:15,fontWeight:700,textDecoration:"none",marginBottom:12}}>Sign In →</a>
-        <div style={{color:"#2d3f5e",fontSize:11,marginTop:16}}>Secured by Clerk · HomeStory Beta</div>
-      </div>
-    </div>
-  );
-
   const [screen,setScreen]=useState("role_select"); // role_select | landing | search | property | log | pricing | standards | landlord | listing
   const [selected,setSelected]=useState(null);
   const [properties,setProperties]=useState(DEMO_PROPERTIES);
