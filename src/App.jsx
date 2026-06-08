@@ -31,6 +31,15 @@ const TYPE_CFG = {
   appliances:  { icon:"🏗️", color:"#8b5cf6", category:"Mechanical",   label:"Appliances"      },
   // Restoration
   restoration: { icon:"🔧", color:C.purple,  category:"Restoration",  label:"Restoration"     },
+  // Damage Events
+  tree_strike:  { icon:"🌳", color:C.red,     category:"Damage",       label:"Tree Strike"     },
+  fire_damage:  { icon:"🔥", color:C.red,     category:"Damage",       label:"Fire Damage"     },
+  flood_damage: { icon:"💧", color:C.blue,    category:"Damage",       label:"Flood Damage"    },
+  earthquake:   { icon:"🌍", color:C.red,     category:"Damage",       label:"Earthquake"      },
+  foundation_issue:{ icon:"⬛",color:C.red,   category:"Damage",       label:"Foundation Issue"},
+  collapse:     { icon:"🧱", color:C.red,     category:"Damage",       label:"Wall/Ceiling Collapse"},
+  vandalism:    { icon:"⚠️", color:C.yellow,  category:"Damage",       label:"Vandalism"       },
+  vehicle_impact:{ icon:"🚗",color:C.red,     category:"Damage",       label:"Vehicle Impact"  },
   // Documentation
   permit:      { icon:"📋", color:C.blue,    category:"Documentation",label:"Permit"          },
   photo:       { icon:"📷", color:C.muted,   category:"Documentation",label:"Photo"           },
@@ -51,6 +60,7 @@ const TRADE_CATEGORIES = {
   "Structural":    ["roof","siding","windows","addition","foundation","gutters","insulation"],
   "Mechanical":    ["hvac","plumbing","electrical","water_heater","appliances"],
   "Restoration":   ["restoration"],
+  "Damage Events": ["tree_strike","fire_damage","flood_damage","earthquake","foundation_issue","collapse","vandalism","vehicle_impact"],
   "Documentation": ["permit","photo","inspection","home_inspection","sale","listing","claim","note"],
   "Rental":      ["move_in","move_out","rental_insp","maintenance"],
 };
@@ -4863,7 +4873,7 @@ export default function HomeStory() {
   const handleBack=()=>{setScreen("search");setSelected(null);};
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans','Helvetica Neue',sans-serif",color:C.text,maxWidth:500,margin:"0 auto"}}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans','Helvetica Neue',sans-serif",color:C.text,maxWidth:900,margin:"0 auto"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -4911,7 +4921,7 @@ export default function HomeStory() {
         )}
         {navOpen&&<div style={{position:"fixed",inset:0,zIndex:199}} onClick={()=>setNavOpen(false)}/>}
 
-        <div style={{padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56}}>
+        <div style={{padding:"0 clamp(16px,4vw,40px)",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,maxWidth:860,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setScreen(screen==="role_select"?"role_select":"landing");setSelected(null);}}>
             {screen!=="landing"&&screen!=="role_select"&&<button onClick={e=>{e.stopPropagation();setScreen(screen==="property"?"search":["log","contractor","pricing","standards","landlord","listing","tenant_request"].includes(screen)?userRole==="landlord"?"landlord":"search":"landing");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px 0 0",lineHeight:1}}>←</button>}
             <div style={{background:C.accent,width:28,height:28,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏠</div>
@@ -4946,7 +4956,7 @@ export default function HomeStory() {
       </div>
 
       {/* Content */}
-      <div style={{padding:"20px 16px"}}>
+      <div style={{padding:"20px clamp(16px, 4vw, 40px)", maxWidth:860, margin:"0 auto"}}>
         {screen==="role_select"&&<RoleSelect onSelect={role=>{
           setUserRole(role);
           if(role==="landlord"){setUserTier("landlord");setScreen("landlord");}
