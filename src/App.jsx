@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useAuth, useUser, SignIn } from "@clerk/clerk-react";
 
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
