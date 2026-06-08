@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useAuth, useUser, SignIn, SignUp, UserButton } from "@clerk/clerk-react";
+import { useAuth, useUser, SignIn } from "@clerk/clerk-react";
 
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -4726,15 +4726,14 @@ export default function HomeStory() {
       <div style={{marginBottom:32,textAlign:"center"}}>
         <div style={{background:"#e8762c",width:56,height:56,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🏠</div>
         <div style={{fontFamily:"'Instrument Serif',serif",fontSize:28,color:"#f0f4ff",marginBottom:8}}>Welcome to HomeStory</div>
-        <div style={{color:"#6b7fa3",fontSize:14}}>Southern Illinois Property Database</div>
+        <div style={{color:"#6b7fa3",fontSize:14,marginBottom:32}}>Southern Illinois Property Database</div>
       </div>
-      <SignIn 
-        appearance={{
-          variables:{colorPrimary:"#e8762c",colorBackground:"#0e1420",colorText:"#f0f4ff",colorInputBackground:"#131b2e",colorInputText:"#f0f4ff"},
-          elements:{card:{background:"#0e1420",border:"1px solid #1e2d47",borderRadius:16},headerTitle:{color:"#f0f4ff"},headerSubtitle:{color:"#6b7fa3"}}
-        }}
-        
-      />
+      <div style={{background:"#0e1420",border:"1px solid #1e2d47",borderRadius:16,padding:32,width:"100%",maxWidth:400,textAlign:"center"}}>
+        <div style={{color:"#f0f4ff",fontSize:18,fontWeight:700,marginBottom:8}}>Sign in to continue</div>
+        <div style={{color:"#6b7fa3",fontSize:13,marginBottom:24}}>Use your Google or Apple account</div>
+        <a href="https://wired-redbird-66.clerk.accounts.dev/sign-in?redirect_url=https://tranquil-heliotrope-578310.netlify.app" style={{display:"block",background:"#e8762c",color:"#fff",borderRadius:10,padding:"14px 24px",fontSize:15,fontWeight:700,textDecoration:"none",marginBottom:12}}>Sign In →</a>
+        <div style={{color:"#2d3f5e",fontSize:11,marginTop:16}}>Secured by Clerk · HomeStory Beta</div>
+      </div>
     </div>
   );
 
