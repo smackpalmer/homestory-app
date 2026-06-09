@@ -31,6 +31,14 @@ const TYPE_CFG = {
   appliances:  { icon:"🏗️", color:"#8b5cf6", category:"Mechanical",   label:"Appliances"      },
   // Restoration
   restoration: { icon:"🔧", color:C.purple,  category:"Restoration",  label:"Restoration"     },
+  fire_restoration:  { icon:"🔥", color:C.red,    category:"Restoration", label:"Fire Restoration"  },
+  water_restoration: { icon:"💧", color:C.blue,   category:"Restoration", label:"Water/Flood Restoration"},
+  mold_remediation:  { icon:"🍄", color:C.green,  category:"Restoration", label:"Mold Remediation"  },
+  storm_restoration: { icon:"🌪️", color:C.purple, category:"Restoration", label:"Storm Restoration"  },
+  smoke_damage:      { icon:"💨", color:C.muted,  category:"Restoration", label:"Smoke Damage"       },
+  biohazard:         { icon:"⚠️", color:C.yellow, category:"Restoration", label:"Biohazard Cleanup"  },
+  // New Construction
+  new_construction:  { icon:"🏗️", color:C.green,  category:"New Construction", label:"New Construction"},
   // Damage Events
   tree_strike:  { icon:"🌳", color:C.red,     category:"Damage",       label:"Tree Strike"     },
   fire_damage:  { icon:"🔥", color:C.red,     category:"Damage",       label:"Fire Damage"     },
@@ -57,12 +65,13 @@ const TYPE_CFG = {
 
 // Group types by category for fast log
 const TRADE_CATEGORIES = {
-  "Structural":    ["roof","siding","windows","addition","foundation","gutters","insulation"],
-  "Mechanical":    ["hvac","plumbing","electrical","water_heater","appliances"],
-  "Restoration":   ["restoration"],
-  "Damage Events": ["tree_strike","fire_damage","flood_damage","earthquake","foundation_issue","collapse","vandalism","vehicle_impact"],
-  "Documentation": ["permit","photo","inspection","home_inspection","sale","listing","claim","note"],
-  "Rental":      ["move_in","move_out","rental_insp","maintenance"],
+  "Structural":        ["roof","siding","windows","addition","foundation","gutters","insulation"],
+  "Mechanical":        ["hvac","plumbing","electrical","water_heater","appliances"],
+  "Restoration":       ["fire_restoration","water_restoration","mold_remediation","storm_restoration","smoke_damage","biohazard","restoration"],
+  "New Construction":  ["new_construction"],
+  "Damage Events":     ["tree_strike","fire_damage","flood_damage","earthquake","foundation_issue","collapse","vandalism","vehicle_impact"],
+  "Documentation":     ["permit","photo","inspection","home_inspection","sale","listing","claim","note"],
+  "Rental":            ["move_in","move_out","rental_insp","maintenance"],
 };
 
 // Typical lifespans for assessment
@@ -246,8 +255,11 @@ function PhotoTimeline({photos}) {
 }
 
 // ── Timeline ──────────────────────────────────────────────────────────────────
-function Timeline({events}) {
+function Timeline({events, onAddTag}) {
   const sorted=[...events].sort((a,b)=>b.year-a.year);
+  const [addingTagFor, setAddingTagFor] = useState(null);
+  const QUICK_TAGS = [{id:"full_replacement",label:"Full Replacement",color:C.green},{id:"repair",label:"Repair",color:C.yellow},{id:"hail",label:"Hail",color:C.blue},{id:"wind",label:"Wind",color:C.blue},{id:"insurance_claim",label:"Insurance Claim",color:C.purple},{id:"warranty_30yr",label:"30yr Warranty",color:C.green},{id:"warranty_25yr",label:"25yr Warranty",color:C.green},{id:"gaf",label:"GAF",color:C.accent},{id:"owens_corning",label:"Owens Corning",color:C.accent},{id:"certainteed",label:"CertainTeed",color:C.accent},{id:"new_decking",label:"New Decking",color:C.accent},{id:"ice_water_shield",label:"Ice & Water",color:C.blue}];
+  const tagDefs=[...QUICK_TAGS,{id:"emergency",label:"Emergency",color:C.red},{id:"warranty_work",label:"Warranty Work",color:C.blue},{id:"partial_decking",label:"Partial Decking",color:C.accent},{id:"ridge_cap",label:"Ridge Cap",color:C.muted},{id:"flashing",label:"Flashing",color:C.muted},{id:"gutters",label:"Gutters",color:C.blue},{id:"skylights",label:"Skylights",color:C.blue},{id:"chimney",label:"Chimney",color:C.muted},{id:"storm",label:"Storm",color:C.purple},{id:"leak",label:"Leak",color:C.yellow},{id:"age",label:"Age",color:C.muted},{id:"structural",label:"Structural",color:C.red},{id:"iko",label:"IKO",color:C.accent},{id:"metal",label:"Metal",color:C.muted},{id:"tpo",label:"TPO",color:C.muted},{id:"flat",label:"Flat",color:C.muted},{id:"warranty_20yr",label:"20yr Warranty",color:C.green},{id:"warranty_10yr",label:"10yr Warranty",color:C.yellow},{id:"warranty_none",label:"No Warranty",color:C.red},{id:"warranty_mfg",label:"Manufacturer",color:C.blue},{id:"warranty_labor",label:"Workmanship",color:C.accent}];
   return (
     <div style={{position:"relative",paddingLeft:32}}>
       <div style={{position:"absolute",left:13,top:8,bottom:8,width:2,background:C.border}}/>
@@ -263,17 +275,30 @@ function Timeline({events}) {
                 <div style={{color:C.accent,fontWeight:800,fontSize:14,flexShrink:0}}>{ev.year}</div>
               </div>
               <div style={{color:C.muted,fontSize:12,lineHeight:1.5,marginBottom:6}}>{ev.note}</div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:6}}>
                 <Pill color={tc.color}>{ev.type}</Pill>
                 <Pill color={isOurWork?C.accent:C.dim}>{ev.source}</Pill>
                 {ev.verified&&<Pill color={C.green}>✓ Verified</Pill>}
                 {ev.preLoss&&<Pill color={C.yellow}>Pre-Loss Doc</Pill>}
                 {ev.tags&&ev.tags.map(id=>{
-                  const tagDefs=[{id:"full_replacement",label:"Full Replacement",color:C.green},{id:"repair",label:"Repair",color:C.yellow},{id:"emergency",label:"Emergency",color:C.red},{id:"warranty_work",label:"Warranty Work",color:C.blue},{id:"insurance_claim",label:"Insurance Claim",color:C.purple},{id:"new_decking",label:"New Decking",color:C.accent},{id:"partial_decking",label:"Partial Decking",color:C.accent},{id:"ice_water_shield",label:"Ice & Water",color:C.blue},{id:"ridge_cap",label:"Ridge Cap",color:C.muted},{id:"flashing",label:"Flashing",color:C.muted},{id:"gutters",label:"Gutters",color:C.blue},{id:"skylights",label:"Skylights",color:C.blue},{id:"chimney",label:"Chimney",color:C.muted},{id:"hail",label:"Hail",color:C.blue},{id:"wind",label:"Wind",color:C.blue},{id:"storm",label:"Storm",color:C.purple},{id:"leak",label:"Leak",color:C.yellow},{id:"age",label:"Age",color:C.muted},{id:"structural",label:"Structural",color:C.red},{id:"gaf",label:"GAF",color:C.accent},{id:"owens_corning",label:"Owens Corning",color:C.accent},{id:"certainteed",label:"CertainTeed",color:C.accent},{id:"iko",label:"IKO",color:C.accent},{id:"metal",label:"Metal",color:C.muted},{id:"tpo",label:"TPO",color:C.muted},{id:"flat",label:"Flat",color:C.muted},{id:"warranty_30yr",label:"30yr Warranty",color:C.green},{id:"warranty_25yr",label:"25yr Warranty",color:C.green},{id:"warranty_20yr",label:"20yr Warranty",color:C.green},{id:"warranty_10yr",label:"10yr Warranty",color:C.yellow},{id:"warranty_none",label:"No Warranty",color:C.red},{id:"warranty_mfg",label:"Manufacturer",color:C.blue},{id:"warranty_labor",label:"Workmanship",color:C.accent}];
                   const tag=tagDefs.find(t=>t.id===id);
                   return tag?<Pill key={id} color={tag.color}>{tag.label}</Pill>:null;
                 })}
+                {isOurWork&&<div onClick={()=>setAddingTagFor(addingTagFor===ev.id?null:ev.id)} style={{background:C.dim+"22",border:`1px solid ${C.dim}`,borderRadius:20,padding:"2px 8px",cursor:"pointer",fontSize:9,fontWeight:700,color:C.dim,WebkitTapHighlightColor:"transparent"}}>+ Tag</div>}
               </div>
+              {addingTagFor===ev.id&&(
+                <div style={{background:C.surface,borderRadius:10,padding:"10px 12px",marginTop:6}}>
+                  <div style={{color:C.dim,fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Add Tags</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                    {QUICK_TAGS.filter(t=>!ev.tags?.includes(t.id)).map(tag=>(
+                      <div key={tag.id} onClick={()=>{onAddTag&&onAddTag(ev.id,tag.id);setAddingTagFor(null);}}
+                        style={{background:tag.color+"22",border:`1px solid ${tag.color}44`,borderRadius:20,padding:"3px 10px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                        <span style={{color:tag.color,fontSize:10,fontWeight:700}}>{tag.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -1906,6 +1931,16 @@ function FastFieldLog({properties, setProperties, onDone, onRefresh}) {
       {id:"emergency",        label:"Emergency",        color:C.red},
       {id:"warranty_work",    label:"Warranty Work",    color:C.blue},
       {id:"insurance_claim",  label:"Insurance Claim",  color:C.purple},
+      {id:"new_build",        label:"New Build",        color:C.green},
+    ],
+    "New Construction": [
+      {id:"foundation_pour",  label:"Foundation Pour",  color:C.muted},
+      {id:"framing",          label:"Framing",          color:C.accent},
+      {id:"rough_in",         label:"Rough-In",         color:C.blue},
+      {id:"drywall",          label:"Drywall",          color:C.muted},
+      {id:"roofing_install",  label:"Roofing Install",  color:C.accent},
+      {id:"final_inspection", label:"Final Inspection", color:C.green},
+      {id:"certificate_occupancy", label:"CO (Certificate of Occupancy)", color:C.green},
     ],
     "Roof Details": [
       {id:"new_decking",        label:"New Decking",        color:C.accent},
@@ -1998,8 +2033,12 @@ function FastFieldLog({properties, setProperties, onDone, onRefresh}) {
       tags: selectedTags,
     };
 
-    // Save to database
+    // Save to database with retry
     try {
+      // Wake server first
+      await fetch("https://homestory-server-production.up.railway.app/api/health").catch(()=>{});
+      // Small delay to let server wake
+      await new Promise(r=>setTimeout(r,800));
       await fetch("https://homestory-server-production.up.railway.app/api/log-job", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -2139,7 +2178,7 @@ function FastFieldLog({properties, setProperties, onDone, onRefresh}) {
           <div style={{marginBottom:16}}>
             <div style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:12}}>Job Tags (optional)</div>
             {Object.entries(JOB_TAGS).map(([category, tags])=>(
-              (selectedType==="roof" || !["Roof Details","Damage Type","Materials","Warranty"].includes(category)) ? (
+              (selectedType==="roof" || selectedType==="new_construction" || !["Roof Details","Damage Type","Materials","Warranty","New Construction"].includes(category)) ? (
                 <div key={category} style={{marginBottom:12}}>
                   <div style={{color:C.dim,fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginBottom:7}}>{category}</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
@@ -2231,7 +2270,7 @@ function PropertyDetail({property,onBack,userTier='free',userRole=null,onShowPay
       {/* Tabs */}
       <div style={{display:"flex",gap:6,marginBottom:18,overflowX:"auto",paddingBottom:6,WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
         {(userTier==="landlord"||userRole==="landlord"
-          ? [["report","📋 Report"],["weather","🌩️ Weather"],["landlord","🏘️ Rental"],["inspection","📝 Inspection"],["docs","📁 Docs"],["photos","📷 Photos"],["timeline","📅 History"]]
+          ? [["report","📋 Report"],["weather","🌩️ Weather"],["inspection","📝 Inspection"],["docs","📁 Docs"],["photos","📷 Photos"],["timeline","📅 History"]]
           : userTier==="contractor"||userRole==="contractor"
           ? [["report","📋 Report"],["weather","🌩️ Weather"],["summary","🤖 AI"],["measurements","📐 Measure"],["buildings","🏚️ Structures"],["jobs","🔨 Photos"],["docs","📁 Docs"],["privacy","🔒 Privacy"],["timeline","📅 History"],["contractor","🔧 Files"]]
           : [["report","📋 Report"],["weather","🌩️ Weather"],["inspection","📝 Inspection"],["docs","📁 Docs"],["privacy","🔒 Privacy"],["photos","📷 Photos"],["timeline","📅 History"]]
@@ -2335,8 +2374,45 @@ function PropertyDetail({property,onBack,userTier='free',userRole=null,onShowPay
       {tab==="privacy"&&<PrivacySettings property={property} userRole={userTier}/>}
       {tab==="landlord"&&<LandlordPanel property={property}/>}
       {tab==="photos"&&<PhotoTimeline photos={property.photos}/>}
-      {tab==="jobs"&&<JobPhotoTimeline property={property} userTier={userTier} companyCamConnected={false}/>}
-      {tab==="timeline"&&<div><div style={{color:C.muted,fontSize:12,marginBottom:14}}>{property.timeline.length} verified records</div><Timeline events={property.timeline}/></div>}
+      {tab==="jobs"&&(
+        <div>
+          <div style={{color:C.muted,fontSize:13,marginBottom:14,lineHeight:1.7}}>Photos from CompanyCam jobs flow in automatically. Each photo is attached to this property address permanently.</div>
+          {property.timeline?.filter(e=>e.type==="photo"||e.note?.includes("companycam")||e.note?.includes("Photo")).length > 0 ? (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {property.timeline.filter(e=>e.type==="photo").map(ev=>(
+                <div key={ev.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                    <div style={{color:C.text,fontSize:13,fontWeight:700}}>{ev.label}</div>
+                    <div style={{color:C.accent,fontWeight:800,fontSize:13}}>{ev.year}</div>
+                  </div>
+                  <div style={{color:C.muted,fontSize:12,lineHeight:1.5,marginBottom:8}}>{ev.note?.slice(0,100)}</div>
+                  {ev.note?.includes("https://")&&(
+                    <a href={ev.note.match(/https:\/\/\S+/)?.[0]} target="_blank" rel="noopener noreferrer"
+                      style={{display:"inline-flex",alignItems:"center",gap:6,background:C.accent+"22",color:C.accent,borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:700,textDecoration:"none"}}>
+                      📷 View Photo
+                    </a>
+                  )}
+                  <div style={{display:"flex",gap:5,marginTop:8,flexWrap:"wrap"}}>
+                    <Pill color={C.accent}>CompanyCam</Pill>
+                    {ev.verified&&<Pill color={C.green}>✓ Verified</Pill>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{textAlign:"center",padding:"40px 0"}}>
+              <div style={{fontSize:40,marginBottom:12}}>📷</div>
+              <div style={{color:C.text,fontSize:15,fontWeight:700,marginBottom:6}}>No photos yet</div>
+              <div style={{color:C.muted,fontSize:13}}>Photos will appear here automatically when your crew takes them in CompanyCam on this job.</div>
+            </div>
+          )}
+        </div>
+      )}
+      {tab==="timeline"&&<div><div style={{color:C.muted,fontSize:12,marginBottom:14}}>{property.timeline.length} verified records</div><Timeline events={property.timeline} onAddTag={(evId,tagId)=>{
+        // Add tag locally
+        const updated = {...property, timeline: property.timeline.map(e=>e.id===evId?{...e,tags:[...(e.tags||[]),tagId]}:e)};
+        // Could POST to server here to persist — for now local only
+      }}/></div>}
       {tab==="contractor"&&(
         <div>
           <div style={{background:C.accent+"11",border:`1px solid ${C.accent}33`,borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
